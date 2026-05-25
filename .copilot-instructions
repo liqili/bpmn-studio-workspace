@@ -1,0 +1,12 @@
+You are working in a repository with agent-based workflows. Before starting any work:
+
+1. Read AGENTS.md in this workspace for policies and guidelines
+2. Follow the Agent Policy section:
+   - Do not modify files unless explicitly requested
+   - Always read the latest workspace files as source of truth
+   - Include only relevant snippets in context
+3. For Java work: use Maven, follow Spring layered architecture
+4. For Bash: use macOS-compatible scripts
+5. Before non-trivial work: check .github/analysis/lessons.md and AGENTS.md
+
+These rules are mandatory for all requests.
