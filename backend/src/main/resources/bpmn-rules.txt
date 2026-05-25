@@ -1,0 +1,76 @@
+================================================================================
+BPMN 2.0 KNOWLEDGE BASE AND STRUCTURAL SCHEMA VALIDATION RULES
+================================================================================
+
+[SECTION: VISUAL GEOMETRY AND CANVAS COORDINATE CONSTRAINTS]
+
+[RULE-ID: GEO-001] [KEYWORDS: Start Event, End Event, Circle, Dimensions, Size]
+A Start Event or End Event must always be rendered as a perfect circle. In the raw XML representation inside <bpmndi:BPMNPlane>, the associated <bpmndi:BPMNShape> element must have an explicit <omgdc:Bounds> tag with a width of exactly 36.0 and a height of exactly 36.0.
+
+[RULE-ID: GEO-002] [KEYWORDS: Task, UserTask, ServiceTask, Dimensions, Size, Rectangle]
+Any standard activity node, including generic Task, UserTask, ServiceTask, ScriptTask, or ManualTask, must be rendered as a rounded rectangle. The associated <bpmndi:BPMNShape> element must declare an <omgdc:Bounds> tag with a width of exactly 100.0 and a height of exactly 80.0.
+
+[RULE-ID: GEO-003] [KEYWORDS: Gateway, ExclusiveGateway, ParallelGateway, Size, Diamond]
+All routing gateways (Exclusive, Parallel, Inclusive, Event-Based) must be rendered as a diamond shape. The associated <bpmndi:BPMNShape> element must declare an <omgdc:Bounds> tag with a width of exactly 50.0 and a height of exactly 50.0.
+
+[RULE-ID: GEO-004] [KEYWORDS: Waypoint, SequenceFlow, Line Coordinates, Connection]
+Every connection line (<bpmn:sequenceFlow>) requires a visual layout map defined by a <bpmndi:BPMNEdge> containing at least two <omgdi:waypoint> elements. The first waypoint represents the exit point coordinate (X, Y) of the source element. The final waypoint represents the entry point coordinate (X, Y) of the target element. If the path turns a corner, intermediate waypoints must be declared at the inflection points to prevent lines from cutting diagonally through shapes.
+
+[RULE-ID: GEO-005] [KEYWORDS: Elements Layout, Spacing, Padding, Overlap]
+To ensure visual readability, a minimum padding of 40.0 coordinate units must be maintained horizontally and vertically between any two adjacent shape boundaries. Elements must never occupy overlapping bounding box regions.
+
+---
+
+[SECTION: TOPOLOGY, SEQUENCE FLOW, AND ROUTING LOGIC]
+
+[RULE-ID: TOP-001] [KEYWORDS: Disconnection, Dangling Node, Flow validation]
+Every Activity, Gateway, and Intermediate Event in a process model must be connected to the graph topology. It must contain at least one valid incoming sequence flow (<bpmn:incoming>) and at least one valid outgoing sequence flow (<bpmn:outgoing>). Stale or dangling graph nodes are structurally invalid.
+
+[RULE-ID: TOP-002] [KEYWORDS: Start Event Connectivity, Terminus]
+A Start Event must only generate outgoing sequence flows. It is a critical specification error for a Start Event to possess an incoming sequence flow. Conversely, an End Event must only receive incoming sequence flows; it can never produce an outgoing sequence flow.
+
+[RULE-ID: TOP-003] [KEYWORDS: SequenceFlow Boundary, Pool Cross]
+A Sequence Flow line (<bpmn:sequenceFlow>) can only connect flow objects that reside within the same parent process or structural Pool. A Sequence Flow cannot cross an outer Pool boundary line to connect nodes across separate corporate entities.
+
+---
+
+[SECTION: ADVANCED GATEWAY BEHAVIOR AND CONDITION STRUCTURING]
+
+[RULE-ID: GTW-001] [KEYWORDS: Exclusive Gateway, XOR, Conditional Split]
+An Exclusive Gateway (<bpmn:exclusiveGateway>) splits a single path into multiple alternative choices where only one option can be executed. Every outgoing sequence flow from a diverging Exclusive Gateway must possess a unique conditional execution expression (<bpmn:conditionExpression>) written in valid script format, or one flow must be designated as the default path using the "default" attribute on the gateway tag.
+
+[RULE-ID: GTW-002] [KEYWORDS: Parallel Gateway, Fork, Join, Synchronization]
+A Parallel Gateway (<bpmn:parallelGateway>) acts as a fork or a join mechanism. When used to fork, it splits execution into multiple concurrent branches simultaneously; no conditional tracking expressions are permitted on the outgoing sequence flows. When used to join, it stalls execution until all incoming paths have successfully arrived at the node.
+
+[RULE-ID: GTW-003] [KEYWORDS: Inclusive Gateway, OR Split]
+An Inclusive Gateway (<bpmn:inclusiveGateway>) allows one, many, or all outgoing branches to activate based on evaluation criteria. Like the Exclusive Gateway, it requires explicit condition expressions or a default path fallback declaration.
+
+---
+
+[SECTION: BOUNDARY EVENTS AND EXCEPTION HANDLING]
+
+[RULE-ID: EXC-001] [KEYWORDS: Boundary Event, ErrorEvent, TimerEvent, Interruption]
+An Intermediate Boundary Event (<bpmn:boundaryEvent>) must be attached directly to an existing parent Activity node using the "attachedToRef" attribute. The value of "attachedToRef" must match the unique string ID of the host Task.
+
+[RULE-ID: EXC-002] [KEYWORDS: Error Boundary Event, Escalation]
+An Error Boundary Event must always be configured as interrupting. When an error is caught during runtime, execution of the host activity ceases instantly, and the token is redirected down the error boundary's outgoing sequence flow path to an exception handling sequence.
+
+---
+
+[SECTION: COLLABORATION, POOLS, AND MESSAGE FLOW ROUTING]
+
+[RULE-ID: COL-001] [KEYWORDS: Participant, Pool, Collaboration Map]
+When a process involves interactions between independent entities, a Collaboration container (<bpmn:collaboration>) must be initialized. Each participant is assigned a dedicated Pool (<bpmn:participant>) pointing to its specific tracking process ID.
+
+[RULE-ID: COL-002] [KEYWORDS: MessageFlow, Communication, Dashed Line]
+A Message Flow line (<bpmn:messageFlow>) is used to model asynchronous communication between two separate Pools. A Message Flow must always connect a node in Pool A to a node in Pool B. It is structurally prohibited to route a Message Flow between two elements that sit inside the same Pool or Lane.
+
+---
+
+[SECTION: DATA MANAGEMENT AND DOCUMENTATION ARTIFACTS]
+
+[RULE-ID: DAT-001] [KEYWORDS: DataObject, DataStore, Input, Output]
+Data Objects (<bpmn:dataObjectReference>) represent physical or digital information items passing through a workflow. They are linked to Activities using Data Input Associations (<bpmn:dataInputAssociation>) or Data Output Associations (<bpmn:dataOutputAssociation>). They do not alter the sequence routing sequence of a process.
+
+[RULE-ID: DAT-002] [KEYWORDS: TextAnnotation, Association]
+Text Annotations (<bpmn:textAnnotation>) provide descriptive prose context for developers reading a map. They connect to structural symbols using an undirected Association line (<bpmn:association>). They never carry sequence or token execution weight.

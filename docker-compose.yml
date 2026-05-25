@@ -1,0 +1,43 @@
+version: '3.5'
+
+services:
+  postgres-db:
+    image: pgvector/pgvector:pg16
+    container_name: bpmn-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: bpmn_db
+      POSTGRES_USER: engine_user
+      POSTGRES_PASSWORD: mysecretpassword
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  java-backend:
+    build: ./backend
+    container_name: bpmn-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-db
+    environment:
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_NAME=bpmn_db
+      - DB_USER=engine_user
+      - DB_PASSWORD=mysecretpassword
+      # Provide a default fallback demo key or intercept via host environment
+      - OPENAI_API_KEY=${OPENAI_API_KEY:demo}
+
+  react-frontend:
+    build: ./frontend
+    container_name: bpmn-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - java-backend
+
+volumes:
+  pgdata:
