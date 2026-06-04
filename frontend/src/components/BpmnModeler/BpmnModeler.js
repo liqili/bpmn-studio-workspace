@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Modeler from "bpmn-js/lib/Modeler";
 import diagramXML from "../../resources/Diagram";
-import "./BpmnModeler.css";
+import "./BpmnModeler.scss";
 
 // Core Layout & Editor Theme Stylesheets (Correct for v3.1.0)
 import "bpmn-js/dist/assets/diagram-js.css"; 

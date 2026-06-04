@@ -131,3 +131,53 @@
   margin-top: 12px;
 }
 
+.submit-btn {
+  /* Layout & Sizing */
+  width: 100%;
+  padding: 12px 20px;
+  margin-top: 16px;
+  
+  /* Typography */
+  font-family: sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  text-align: center;
+  
+  /* Styling & Borders */
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  
+  /* Hardware-accelerated Transitions */
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+/* Hover State: Deepens the glow effect and shifts background color slightly */
+.submit-btn:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4);
+}
+
+/* Active State: Gives a tactile, physical click sensation */
+.submit-btn:active {
+  transform: scale(0.98);
+}
+
+/* Focus State: Accessible keyboard navigation ring tailored to match your theme */
+.submit-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5), 0 4px 14px 0 rgba(99, 102, 241, 0.4);
+}
+
+/* Disabled State: Gracefully handles loading or empty input states */
+.submit-btn:disabled {
+  background: #1e293b;
+  color: #64748b;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
