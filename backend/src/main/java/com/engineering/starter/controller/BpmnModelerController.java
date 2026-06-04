@@ -26,11 +26,22 @@ public class BpmnModelerController {
         System.out.println("[Spring Boot 3.5] Passing prompt context to OpenAI: " + request.getUserRequest());
 
         try {
-            var modifiedXml = aiEngineService.executeXmlMutation(request.getCurrentXml(), request.getUserRequest());            // Clean up any defensive model formatting responses safely on a single line
+            var modifiedXml = aiEngineService.executeXmlMutation(request.getCurrentXml(), request.getUserRequest()); // Clean
+                                                                                                                     // up
+                                                                                                                     // any
+                                                                                                                     // defensive
+                                                                                                                     // model
+                                                                                                                     // formatting
+                                                                                                                     // responses
+                                                                                                                     // safely
+                                                                                                                     // on
+                                                                                                                     // a
+                                                                                                                     // single
+                                                                                                                     // line
             modifiedXml = modifiedXml.replaceAll("```xml", "")
                     .replaceAll("```", "")
-                         .replaceAll("\n", "")
-                         .trim();
+                    .replaceAll("\n", "")
+                    .trim();
 
             return ResponseEntity.ok(new BpmnMutationResponse(modifiedXml));
         } catch (Exception e) {

@@ -30,7 +30,11 @@ services:
       - OPENAI_API_KEY=demo
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_BASE_URL=http://localhost:8080
     container_name: bpmn-frontend
     ports:
       - "3000:80"
