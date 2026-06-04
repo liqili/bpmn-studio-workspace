@@ -13,7 +13,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  java-backend:
+  backend:
     build: ./backend
     container_name: bpmn-backend
     ports:
@@ -27,17 +27,17 @@ services:
       - DB_USER=engine_user
       - DB_PASSWORD=mysecretpassword
       # Provide a default fallback demo key or intercept via host environment
-      - OPENAI_API_KEY=${OPENAI_API_KEY:demo}
+      - OPENAI_API_KEY=demo
 
-  react-frontend:
+  frontend:
     build: ./frontend
     container_name: bpmn-frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     depends_on:
-      - java-backend
+      - backend
 
 volumes:
   pgdata:

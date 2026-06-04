@@ -1,8 +1,10 @@
 package com.engineering.starter.service;
 
 import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.DocumentLoader;
 import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
 import dev.langchain4j.data.document.parser.TextDocumentParser;
+import dev.langchain4j.data.document.source.FileSystemSource;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -10,10 +12,18 @@ import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
 
 @Service
 public class VectorService {
@@ -49,21 +59,23 @@ public class VectorService {
 
         System.out.println("Initializing BPMN Knowledge base vectors via OpenAI API...");
 
+        // 3. Instantiate OpenAI Embedding Model
         EmbeddingModel embeddingModel = OpenAiEmbeddingModel.builder()
                 .apiKey(this.apiKey)
                 .modelName("text-embedding-3-small") // High-efficiency, 1536-dimension architecture
                 .build();
 
         try {
-            // 3. Read raw schema text sheets from the classpath resources
-            Document document = FileSystemDocumentLoader.loadDocument(
-                    bpmnRulesResource.getFile().toPath(),
-                    new TextDocumentParser()
-            );
+            // 4. Delegate heavy lifting directly to LangChain4j's native document loaders
+            // If bpmnRulesResource is a Spring FileSystemResource:
+            Document document = FileSystemDocumentLoader.loadDocument(Paths.get(bpmnRulesResource.getURI()));
 
-            // 4. Segment and parse rules text into chunks before vector transformation
+            // ALTERNATIVE (If it's a ClassPathResource or inside a JAR):
+            // Document document = UrlDocumentLoader.load(bpmnRulesResource.getURL(), new TextDocumentParser());
+
+            // 5. Hand off the Document to the ingestor setup
             EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
-                    .documentSplitter(DocumentSplitters.recursive(400, 50)) // 400 char windows match our custom rule blocks
+                    .documentSplitter(DocumentSplitters.recursive(400, 50))
                     .embeddingModel(embeddingModel)
                     .embeddingStore(embeddingStore)
                     .build();
