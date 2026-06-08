@@ -172,7 +172,6 @@ export default function BpmnModeler() {
   // Re-fit canvas when switching back to canvas tab on mobile
   useEffect(() => {
     if (activeTab === TAB_CANVAS && modelerRef.current) {
-      // Small delay lets the DOM finish showing the canvas before fitting
       setTimeout(() => {
         modelerRef.current.get("canvas").zoom("fit-viewport");
       }, 50);
@@ -207,7 +206,6 @@ export default function BpmnModeler() {
       mutatedXml = await ensureDiagramInterchange(mutatedXml);
       await safeImport(mutatedXml);
       setUserRequest("");
-      // Switch to canvas tab on mobile so user sees the result
       setActiveTab(TAB_CANVAS);
     } catch (err) {
       console.error(err);
@@ -222,9 +220,6 @@ export default function BpmnModeler() {
   // -----------------------------
   return (
       <div className="workspace-container">
-
-        {/* ── Desktop: three-column layout ─────────────────────────────────── */}
-        {/* ── Mobile: full-screen panels controlled by activeTab ───────────── */}
 
         {/* Canvas panel */}
         <div className={`canvas-area ${activeTab === TAB_CANVAS ? "mobile-active" : "mobile-hidden"}`}>
@@ -282,17 +277,24 @@ export default function BpmnModeler() {
 
           <div className="action-block">
             <button
-                className="submit-btn"
+                className={`submit-btn${isLoading ? " loading" : ""}`}
                 onClick={executeAiMutation}
-                disabled={isLoading || !userRequest.trim()}
+                disabled={!isLoading && !userRequest.trim()}
             >
-              {isLoading ? "Mutating Architecture..." : "Execute Agent Mutation"}
+              {isLoading ? (
+                  <span className="btn-loading">
+                    <span className="btn-spinner" />
+                    Mutating Architecture...
+                  </span>
+              ) : (
+                  "Execute Agent Mutation"
+              )}
             </button>
             <div className="connection-profile">Connected Profile: Spring RAG</div>
           </div>
         </div>
 
-        {/* ── Mobile tab bar (hidden on desktop) ───────────────────────────── */}
+        {/* Mobile tab bar */}
         <nav className="mobile-tabbar">
           <button
               className={`tab-btn ${activeTab === TAB_CANVAS ? "tab-active" : ""}`}
