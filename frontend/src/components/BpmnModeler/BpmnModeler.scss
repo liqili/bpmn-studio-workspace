@@ -90,7 +90,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 .canvas-toolbar {
   position: absolute;
-  bottom: 32px;
+  bottom: 12px;
   left: calc(var(--bpmn-palette-width) + 14px);
   z-index: 500;
   display: flex;
@@ -354,7 +354,7 @@
 
   // Export toolbar: move above tab bar
   .canvas-toolbar {
-    bottom: calc(var(--tabbar-height) + 12px);
+    bottom: 8px;
     left: calc(var(--bpmn-palette-width) + 10px);
     flex-direction: row; // horizontal on mobile to save vertical space
     gap: 8px;
