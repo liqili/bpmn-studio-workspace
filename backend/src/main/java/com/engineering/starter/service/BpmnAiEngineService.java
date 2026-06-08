@@ -1,10 +1,12 @@
 package com.engineering.starter.service;
 
 import com.engineering.starter.agent.BpmnModifierAgent;
+import com.engineering.starter.util.BpmnXmlValidator;
 import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.query.Query;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,16 +15,13 @@ public class BpmnAiEngineService {
 
     private final BpmnModifierAgent agent;
     private final ContentRetriever contentRetriever;
-    private final BpmnValidatorService validatorService;
 
     public BpmnAiEngineService(
             BpmnModifierAgent agent,
-            ContentRetriever contentRetriever,
-            BpmnValidatorService validatorService
+            ContentRetriever contentRetriever
     ) {
         this.agent = agent;
         this.contentRetriever = contentRetriever;
-        this.validatorService = validatorService;
     }
 
     public String executeXmlMutation(String currentXml, String userRequest) {
@@ -34,14 +33,19 @@ public class BpmnAiEngineService {
                 .collect(Collectors.joining("\n\n"));
 
         if (information.trim().isEmpty()) {
-            information = "No specific corporate compliance or naming rules found for this operation.";
+            information = "No specific rules found.";
         }
 
-        String mutatedXml = this.agent.modifyWorkflow(information, currentXml, userRequest);
+        // STEP 1: LLM generates process-only BPMN
+        String rawXml = agent.modifyWorkflow(information, currentXml, userRequest);
 
-        // 🔥 VALIDATE BEFORE RETURN
-        validatorService.validate(mutatedXml);
+        // STEP 2: remove BPMNDI completely
+        String processOnlyXml = BpmnXmlValidator.stripDiagramSection(rawXml);
 
-        return mutatedXml;
+        // STEP 3: OPTIONAL validation (recommended)
+        BpmnXmlValidator.validate(processOnlyXml);
+
+        // STEP 4: return process-only XML
+        return processOnlyXml;
     }
 }

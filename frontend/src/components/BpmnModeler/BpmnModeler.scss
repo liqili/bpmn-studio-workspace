@@ -1,183 +1,306 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// BpmnModeler.scss — pixel-matched to the live screenshot
+// ─────────────────────────────────────────────────────────────────────────────
+
+:root {
+  --bpmn-border:           #cccccc;
+  --bpmn-palette-width:    46px;   // actual bpmn-js palette column width
+  --bpmn-panel-bg:         #f8f8f8;
+  --bpmn-panel-border:     #e0e0e0;
+  --bpmn-panel-width:      280px;
+  --bpmn-blue:             #0d6efd;
+  --bpmn-blue-hover:       #0b5ed7;
+  --bpmn-blue-muted:       rgba(13, 110, 253, 0.12);
+
+  --sidebar-bg:            #f0f4f8;
+  --sidebar-border:        #d1dce8;
+  --sidebar-width:         340px;
+  --sidebar-accent:        #0d6efd;
+  --sidebar-text:          #1a2332;
+  --sidebar-muted:         #64748b;
+  --sidebar-surface:       #ffffff;
+  --sidebar-surface-border:#cbd5e1;
+}
+
+// ── Root layout: palette | canvas | properties | sidebar ─────────────────────
 .workspace-container {
   display: flex;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background-color: #ffffff;
+  background: #ffffff;
+  font-family: -apple-system, "Segoe UI", Arial, sans-serif;
 }
 
+// ── Canvas area (takes all remaining space) ───────────────────────────────────
 .canvas-area {
   flex: 1;
+  min-width: 0;          // critical: lets flex item shrink below content size
   height: 100%;
   position: relative;
-  border-right: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-right: 1px solid var(--bpmn-border);
 }
 
+// Badge: positioned INSIDE .canvas-area, clear of the palette column
+// The palette renders inside #js-canvas starting at x=0, so offset by its width
 .canvas-badge {
   position: absolute;
-  top: 16px;
-  left: 60px; /* Shifted right to cleanly clear room for the editor palette buttons */
-  z-index: 10;
-  background-color: rgba(15, 23, 42, 0.9);
-  color: #ffffff;
-  padding: 6px 12px;
-  border-radius: 6px;
+  top: 12px;
+  left: calc(var(--bpmn-palette-width) + 14px);  // clears the palette exactly
+  z-index: 100;
+  pointer-events: none;  // never captures clicks meant for canvas/palette
+
+  background: rgba(255, 255, 255, 0.95);
+  color: #3a3a3a;
+  border: 1px solid #c8c8c8;
+  border-radius: 3px;
+  padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
-  font-family: sans-serif;
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+// The bpmn-js canvas div — full size, no extra margin/padding
 #js-canvas {
   width: 100%;
   height: 100%;
+
+  // Palette chrome — keep consistent with panel background
+  .djs-palette {
+    background: #fafafa !important;
+    border-right: 1px solid var(--bpmn-border) !important;
+    box-shadow: none !important;
+  }
+
+  // Selection stroke → bpmn-io blue
+  .djs-element.selected .djs-outline {
+    stroke: var(--bpmn-blue) !important;
+  }
+
+  .djs-element:hover .djs-outline {
+    stroke: var(--bpmn-blue) !important;
+    stroke-opacity: 0.4 !important;
+  }
+
+  .djs-lasso-overlay {
+    fill: var(--bpmn-blue-muted) !important;
+    stroke: var(--bpmn-blue) !important;
+  }
 }
 
-/* Styled Column layout for the standard Properties panel */
+// ── Properties panel ──────────────────────────────────────────────────────────
+// bpmn-js-properties-panel v5 renders its own Preact tree inside this div.
+// We only control the container shell; the panel styles itself internally.
 .properties-panel-container {
-  width: 300px;
+  width: var(--bpmn-panel-width);
+  min-width: var(--bpmn-panel-width);
   height: 100%;
-  background-color: #f8fafc;
-  border-right: 1px solid #cbd5e1;
+  background: var(--bpmn-panel-bg);
+  border-right: 1px solid var(--bpmn-panel-border);
   overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
+  flex-shrink: 0;
+
+  // Thin scrollbar matching panel background
+  scrollbar-width: thin;
+  scrollbar-color: #d0d0d0 transparent;
+  &::-webkit-scrollbar       { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
+
+  // v5 properties panel internal overrides — only if needed to correct colour
+  .bio-properties-panel {
+    background: var(--bpmn-panel-bg) !important;
+  }
 }
 
-/* Clear alignment adjustment overrides for properties panel interior child structures */
-.properties-panel-container .bpp-properties-panel {
-  background-color: #f8fafc !important;
-  border: none !important;
-  padding: 12px !important;
-}
-
+// ── AI Sidebar ────────────────────────────────────────────────────────────────
 .ai-sidebar {
-  width: 360px;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
   height: 100%;
-  background-color: #020617;
-  padding: 24px;
+  background: var(--sidebar-bg);
+  border-left: 1px solid var(--sidebar-border);
   box-sizing: border-box;
+  flex-shrink: 0;
+
+  // Three-row layout: header | scrollable-middle | pinned-footer
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: -10px 0 25px -5px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  gap: 0;
+
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.08);
 }
 
-.sidebar-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #818cf8;
-  font-family: sans-serif;
-}
+// Row 1 — Header (fixed height, never shrinks)
+.sidebar-header {
+  flex-shrink: 0;
 
-.sidebar-header p {
-  margin: 0;
-  font-size: 12px;
-  color: #94a3b8;
-  line-height: 1.5;
-  font-family: sans-serif;
+  h2 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sidebar-accent);
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+      content: '';
+      display: block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--sidebar-accent);
+      box-shadow: 0 0 7px var(--sidebar-accent);
+      flex-shrink: 0;
+    }
+  }
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--sidebar-muted);
+    line-height: 1.55;
+  }
 }
 
 .sidebar-divider {
+  flex-shrink: 0;
   margin: 16px 0;
-  border: 0;
-  border-top: 1px solid #1e293b;
+  border: none;
+  border-top: 1px solid var(--sidebar-border);
 }
 
+// Row 2 — Input group (grows to fill all middle space)
 .input-group {
+  flex: 1;           // ← takes all available vertical space between header and footer
+  min-height: 0;     // ← required for flex children to scroll/shrink correctly
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1;
-  margin-top: 8px;
 }
 
 .input-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #cbd5e1;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sidebar-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-family: sans-serif;
+  letter-spacing: 0.08em;
 }
 
+// Textarea fills all remaining space inside .input-group
 .prompt-textarea {
+  flex: 1;           // ← grows inside .input-group to consume all vertical space
+  min-height: 80px;  // minimum so it doesn't collapse
   width: 100%;
-  height: 160px;
-  border-radius: 8px;
-  padding: 12px;
   box-sizing: border-box;
-  background-color: #0f172a;
-  border: 1px solid #1e293b;
-  color: #e2e8f0;
-  font-size: 14px;
+  padding: 11px 13px;
+  background: var(--sidebar-surface);
+  border: 1px solid var(--sidebar-surface-border);
+  border-radius: 6px;
+  color: var(--sidebar-text);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.55;
   outline: none;
-  resize: none;
-  line-height: 1.5;
+  resize: none;      // no manual resize — it fills space automatically
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder { color: #94a3b8; }
+
+  &:focus {
+    border-color: var(--sidebar-accent);
+    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 }
 
-.prompt-textarea:focus {
-  border-color: #6366f1;
-}
-
+// Error banner (optional row between textarea and footer)
 .error-banner {
-  background-color: rgba(136, 19, 55, 0.3);
-  border: 1px solid #9f1239;
-  border-radius: 8px;
-  padding: 12px;
-  color: #fda4af;
+  flex-shrink: 0;
+  background: #fff0f0;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #dc2626;
   font-size: 12px;
-  line-height: 1.4;
-  margin-top: 12px;
+  line-height: 1.45;
+  margin-top: 10px;
+}
+
+// Row 3 — Action footer (pinned to bottom, never shrinks)
+.action-block {
+  flex-shrink: 0;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .submit-btn {
-  /* Layout & Sizing */
   width: 100%;
-  padding: 12px 20px;
-  margin-top: 16px;
-  
-  /* Typography */
-  font-family: sans-serif;
-  font-size: 14px;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
   color: #ffffff;
-  letter-spacing: 0.02em;
   text-align: center;
-  
-  /* Styling & Borders */
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  border: none;
-  border-radius: 8px;
+  letter-spacing: 0.01em;
+
+  background: var(--bpmn-blue);
+  border: 1px solid var(--bpmn-blue-hover);
+  border-radius: 4px;
   cursor: pointer;
-  
-  /* Hardware-accelerated Transitions */
-  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-  will-change: transform;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--bpmn-blue-hover);
+    box-shadow: 0 3px 10px rgba(13, 110, 253, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.4);
+  }
+
+  &:disabled {
+    background: var(--sidebar-surface);
+    border-color: var(--sidebar-surface-border);
+    color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 }
 
-/* Hover State: Deepens the glow effect and shifts background color slightly */
-.submit-btn:hover {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4);
-}
+.connection-profile {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--sidebar-muted);
+  text-align: center;
+  letter-spacing: 0.02em;
 
-/* Active State: Gives a tactile, physical click sensation */
-.submit-btn:active {
-  transform: scale(0.98);
-}
-
-/* Focus State: Accessible keyboard navigation ring tailored to match your theme */
-.submit-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5), 0 4px 14px 0 rgba(99, 102, 241, 0.4);
-}
-
-/* Disabled State: Gracefully handles loading or empty input states */
-.submit-btn:disabled {
-  background: #1e293b;
-  color: #64748b;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+  &::before {
+    content: '● ';
+    color: #3fb950;
+    font-size: 8px;
+    vertical-align: middle;
+    margin-right: 2px;
+  }
 }

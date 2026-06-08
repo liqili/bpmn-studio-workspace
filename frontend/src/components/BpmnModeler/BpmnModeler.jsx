@@ -1,63 +1,75 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Modeler from "bpmn-js/lib/Modeler";
+import { layoutProcess } from "bpmn-auto-layout";
+
+// v5 properties panel — named exports only, no default
+import {
+  BpmnPropertiesPanelModule,
+  BpmnPropertiesProviderModule,
+  CamundaPlatformPropertiesProviderModule,
+} from "bpmn-js-properties-panel";
+
+// Camunda 7 moddle (v7+ has named exports)
+import camundaModdleDescriptors from "camunda-bpmn-moddle/resources/camunda";
+
+// CSS — paths changed in v18
+import "bpmn-js/dist/assets/diagram-js.css";
+import "bpmn-js/dist/assets/bpmn-js.css";
+import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
+import "@bpmn-io/properties-panel/dist/assets/properties-panel.css";
 
 import "./BpmnModeler.scss";
-import "bpmn-js/dist/assets/diagram-js.css";
-import "bpmn-font/dist/css/bpmn-embedded.css";
-
-// Properties Panel
-import propertiesPanelModule from "bpmn-js-properties-panel";
-import propertiesProviderModule from "bpmn-js-properties-panel/lib/provider/camunda";
-import "bpmn-js-properties-panel/dist/assets/bpmn-js-properties-panel.css";
-
-import camundaModdleDescriptor from "camunda-bpmn-moddle/resources/camunda";
 
 export default function BpmnModeler() {
   const canvasRef = useRef(null);
   const propertiesRef = useRef(null);
   const modelerRef = useRef(null);
-
-  const importingRef = useRef(false); // 🔒 prevents race conditions
+  const importingRef = useRef(false);
 
   const [userRequest, setUserRequest] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // -----------------------------
-  // CLEAN XML HELPER
+  // CLEAN LLM XML OUTPUT
   // -----------------------------
   const cleanXML = (xml) => {
     if (!xml) return xml;
-
-    return xml
-        .replace(/```xml/g, "")
-        .replace(/```/g, "")
-        .trim();
+    return xml.replace(/```xml/g, "").replace(/```/g, "").trim();
   };
 
   // -----------------------------
-  // SAFE IMPORT WRAPPER
+  // ENSURE DI — uses bpmn-auto-layout (works standalone, no bpmn-js dep)
+  // -----------------------------
+  const ensureDiagramInterchange = async (xml) => {
+    if (xml.includes("bpmndi:BPMNDiagram")) return xml;
+    try {
+      return await layoutProcess(xml);
+    } catch (err) {
+      console.warn("bpmn-auto-layout failed:", err);
+      return xml; // graceful fallback
+    }
+  };
+
+  // -----------------------------
+  // SAFE IMPORT — v18 uses Promise-based importXML (no callback)
   // -----------------------------
   const safeImport = async (xml) => {
-    if (!modelerRef.current) return;
-    if (importingRef.current) return;
-
+    if (!modelerRef.current || importingRef.current) return;
     importingRef.current = true;
 
     try {
-      const result = await modelerRef.current.importXML(xml);
+      // v18: importXML returns a Promise, NOT a callback
+      const { warnings } = await modelerRef.current.importXML(xml);
 
-      if (result?.warnings?.length) {
-        console.warn("BPMN warnings:", result.warnings);
+      if (warnings?.length) {
+        console.warn("BPMN import warnings:", warnings);
       }
 
-      if (result?.errors?.length) {
-        console.error("BPMN errors:", result.errors);
-        setError("Invalid BPMN structure detected");
-      }
+      modelerRef.current.get("canvas").zoom("fit-viewport");
     } catch (err) {
       console.error("Import failed:", err);
-      setError("Failed to render BPMN diagram");
+      setError("Failed to render BPMN diagram: " + err.message);
     } finally {
       importingRef.current = false;
     }
@@ -70,18 +82,16 @@ export default function BpmnModeler() {
     const modeler = new Modeler({
       container: canvasRef.current,
       propertiesPanel: {
-        parent: propertiesRef.current
+        parent: propertiesRef.current,
       },
       additionalModules: [
-        propertiesPanelModule,
-        propertiesProviderModule
+        BpmnPropertiesPanelModule,         // core panel infrastructure
+        BpmnPropertiesProviderModule,       // standard BPMN properties
+        CamundaPlatformPropertiesProviderModule, // Camunda 7 properties
       ],
       moddleExtensions: {
-        camunda: camundaModdleDescriptor
+        camunda: camundaModdleDescriptors,
       },
-      keyboard: {
-        bindTo: window
-      }
     });
 
     modelerRef.current = modeler;
@@ -89,8 +99,8 @@ export default function BpmnModeler() {
     const loadDiagram = async () => {
       try {
         const res = await fetch("/processes/Diagram.bpmn");
-        const xml = await res.text();
-
+        const rawXml = await res.text();
+        const xml = await ensureDiagramInterchange(rawXml);
         await safeImport(xml);
       } catch (err) {
         console.error("Error loading BPMN:", err);
@@ -100,23 +110,16 @@ export default function BpmnModeler() {
 
     loadDiagram();
 
-    return () => {
-      if (modelerRef.current) {
-        modelerRef.current.destroy();
-      }
-    };
+    return () => modelerRef.current?.destroy();
   }, []);
 
   // -----------------------------
-  // SAVE XML
+  // SAVE XML — v18 saveXML also returns a Promise
   // -----------------------------
-  const saveXML = useCallback(() => {
-    return new Promise((resolve, reject) => {
-      modelerRef.current.saveXML({ format: true }, (err, xml) => {
-        if (err) reject(err);
-        else resolve(xml);
-      });
-    });
+  const saveXML = useCallback(async () => {
+    // v18: saveXML is Promise-based, returns { xml, error }
+    const { xml } = await modelerRef.current.saveXML({ format: true });
+    return xml;
   }, []);
 
   // -----------------------------
@@ -135,37 +138,27 @@ export default function BpmnModeler() {
           `${process.env.REACT_APP_API_BASE_URL}/api/bpmn/generate`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              userRequest,
-              currentXml
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userRequest, currentXml }),
           }
       );
 
-      if (!response.ok) {
-        throw new Error("Server error: " + response.status);
-      }
+      if (!response.ok) throw new Error("Server error: " + response.status);
 
       const data = await response.json();
-
       let mutatedXml = data?.newXml || data;
 
       if (typeof mutatedXml !== "string") {
         throw new Error("Invalid BPMN XML returned from API");
       }
 
-      // 🔥 CLEAN LLM OUTPUT
+      // 1. Strip markdown fences from LLM output
       mutatedXml = cleanXML(mutatedXml);
 
-      // emergency repair (your safeguard)
-      mutatedXml = mutatedXml.replace(
-          /<bpmndi:BPMNShape([^>]*?)>((?:(?!<bpmndi:BPMNLabel>)[\s\S])*?)<\/bpmndi:BPMNLabel>/g,
-          "<bpmndi:BPMNShape$1>$2</bpmndi:BPMNShape>"
-      );
+      // 2. Auto-generate DI if LLM returned semantic-only XML
+      mutatedXml = await ensureDiagramInterchange(mutatedXml);
 
+      // 3. Render
       await safeImport(mutatedXml);
 
       setUserRequest("");
@@ -182,25 +175,18 @@ export default function BpmnModeler() {
   // -----------------------------
   return (
       <div className="workspace-container">
-
-        {/* Canvas */}
         <div className="canvas-area">
-          <div className="canvas-badge">
-            BPMN 2.0 INTERACTIVE ENGINE
-          </div>
+          <div className="canvas-badge">BPMN 2.0 INTERACTIVE ENGINE</div>
           <div ref={canvasRef} id="js-canvas" />
         </div>
 
-        {/* Properties Panel */}
         <div
             ref={propertiesRef}
             id="js-properties-panel"
             className="properties-panel-container"
         />
 
-        {/* AI Sidebar */}
         <div className="ai-sidebar">
-
           <div className="sidebar-header">
             <h2>BPMN AI Copilot</h2>
             <p>Modify or extend the process using natural language.</p>
@@ -208,10 +194,7 @@ export default function BpmnModeler() {
           </div>
 
           <div className="input-group">
-          <span className="input-label">
-            Mutation Command Prompt
-          </span>
-
+            <span className="input-label">Mutation Command Prompt</span>
             <textarea
                 className="prompt-textarea"
                 value={userRequest}
@@ -233,16 +216,10 @@ export default function BpmnModeler() {
                 onClick={executeAiMutation}
                 disabled={isLoading || !userRequest.trim()}
             >
-              {isLoading
-                  ? "Mutating Architecture..."
-                  : "Execute Agent Mutation"}
+              {isLoading ? "Mutating Architecture..." : "Execute Agent Mutation"}
             </button>
-
-            <div className="connection-profile">
-              Connected Profile: Spring RAG
-            </div>
+            <div className="connection-profile">Connected Profile: Spring RAG</div>
           </div>
-
         </div>
       </div>
   );

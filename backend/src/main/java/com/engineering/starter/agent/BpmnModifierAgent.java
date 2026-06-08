@@ -15,12 +15,18 @@ public interface BpmnModifierAgent {
     - XML MUST be strictly well-formed (balanced tags required)
     - Any invalid structure is a failure and must be internally corrected before output
 
-    CRITICAL BPMN DIAGRAM RULES:
-    1. Every <bpmndi:BPMNShape> MUST close with </bpmndi:BPMNShape>
-    2. Every <bpmndi:BPMNEdge> MUST close with </bpmndi:BPMNEdge>
-    3. Every <bpmndi:BPMNLabel> MUST close with </bpmndi:BPMNLabel> BEFORE closing its parent
-    4. No tag nesting violations are allowed (NO mismatched closures)
-    5. Do NOT output partial XML or explanations under any circumstance
+    CRITICAL ARCHITECTURE RULE:
+    - DO NOT generate <bpmndi:BPMNDiagram> or any BPMN DI elements
+    - DO NOT generate layout, coordinates, or visual metadata
+    - ONLY generate process logic:
+        - <process>
+        - <startEvent>
+        - <endEvent>
+        - <userTask>
+        - <serviceTask>
+        - <exclusiveGateway>
+        - <parallelGateway>
+        - <sequenceFlow>
 
     STRUCTURE SAFETY RULE:
     - Treat BPMN XML like compiled code: it must compile before output
