@@ -13,28 +13,35 @@ public class BpmnAiEngineService {
 
     private final BpmnModifierAgent agent;
     private final ContentRetriever contentRetriever;
+    private final BpmnValidatorService validatorService;
 
-    public BpmnAiEngineService(BpmnModifierAgent agent, ContentRetriever contentRetriever) {
+    public BpmnAiEngineService(
+            BpmnModifierAgent agent,
+            ContentRetriever contentRetriever,
+            BpmnValidatorService validatorService
+    ) {
         this.agent = agent;
         this.contentRetriever = contentRetriever;
+        this.validatorService = validatorService;
     }
 
     public String executeXmlMutation(String currentXml, String userRequest) {
-        // 1. Query the vector database using ONLY the natural language string
+
         List<Content> retrievedRules = contentRetriever.retrieve(new Query(userRequest));
 
-        // 2. Flatten the retrieved data chunks into a single text block
         String information = retrievedRules.stream()
-                .map(content -> content.textSegment().text())
+                .map(c -> c.textSegment().text())
                 .collect(Collectors.joining("\n\n"));
 
-        // 3. Fallback Guardrail: If your Postgres table is empty or has no matches,
-        // provide a default string so the template engine never crashes again.
         if (information.trim().isEmpty()) {
             information = "No specific corporate compliance or naming rules found for this operation.";
         }
 
-        // 4. Send all three parameters cleanly down to OpenAI
-        return this.agent.modifyWorkflow(information, currentXml, userRequest);
+        String mutatedXml = this.agent.modifyWorkflow(information, currentXml, userRequest);
+
+        // 🔥 VALIDATE BEFORE RETURN
+        validatorService.validate(mutatedXml);
+
+        return mutatedXml;
     }
 }
