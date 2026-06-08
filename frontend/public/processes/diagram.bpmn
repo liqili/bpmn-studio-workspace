@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions
+    xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+    xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+    xmlns:tns="http://www.activiti.org/test"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    exporter="Camunda Modeler"
+    exporterVersion="3.2.3"
+    expressionLanguage="http://www.w3.org/1999/XPath"
+    id="_1566544069736"
+    name=""
+    targetNamespace="http://www.activiti.org/test"
+    typeLanguage="http://www.w3.org/2001/XMLSchema">
+  <process
+      id="sampleBpmnProcess"
+      isClosed="false"
+      isExecutable="true"
+      name="BPMN Sample Process"
+      processType="None">
+
+    <startEvent
+        id="startevent1"
+        isInterrupting="true"
+        name="Start"
+        parallelMultiple="false">
+      <outgoing>flow1</outgoing>
+      <outputSet/>
+    </startEvent>
+    <endEvent id="endevent1" name="End">
+      <incoming>flow3</incoming>
+      <inputSet/>
+    </endEvent>
+    <userTask
+        completionQuantity="1"
+        id="usertask1"
+        implementation="##unspecified"
+        isForCompensation="false"
+        name="User Task1"
+        startQuantity="1">
+      <incoming>flow1</incoming>
+      <outgoing>flow2</outgoing>
+    </userTask>
+    <userTask
+        completionQuantity="1"
+        id="usertask2"
+        implementation="##unspecified"
+        isForCompensation="false"
+        name="User Task2"
+        startQuantity="1">
+      <incoming>flow2</incoming>
+      <outgoing>flow3</outgoing>
+    </userTask>
+    <sequenceFlow id="flow1" sourceRef="startevent1" targetRef="usertask1"/>
+    <sequenceFlow id="flow2" sourceRef="usertask1" targetRef="usertask2"/>
+    <sequenceFlow id="flow3" sourceRef="usertask2" targetRef="endevent1"/>
+  </process>
+</definitions>

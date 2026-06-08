@@ -154,7 +154,7 @@ export default function BpmnModeler() {
 
     const loadDiagram = async () => {
       try {
-        const res    = await fetch("/processes/Diagram.bpmn");
+        const res    = await fetch("/processes/diagram.bpmn");
         const rawXml = await res.text();
         const xml    = await ensureDiagramInterchange(rawXml);
         await safeImport(xml);
