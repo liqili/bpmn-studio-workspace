@@ -1,14 +1,10 @@
-import React, { Component } from "react";
+import React from "react";
 import BpmnModeler from "./components/BpmnModeler/BpmnModeler";
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App" style={{ height: "100%" }}>
+export default function App() {
+  return (
+      <div className="App">
         <BpmnModeler />
       </div>
-    );
-  }
+  );
 }
-
-export default App;
