@@ -17,14 +17,14 @@ export default function BpmnModeler() {
   const propertiesRef = useRef(null);
   const modelerRef = useRef(null);
 
-  const importingRef = useRef(false);
+  const importingRef = useRef(false); // 🔒 prevents race conditions
 
   const [userRequest, setUserRequest] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // -----------------------------
-  // CLEAN XML
+  // CLEAN XML HELPER
   // -----------------------------
   const cleanXML = (xml) => {
     if (!xml) return xml;
@@ -36,9 +36,9 @@ export default function BpmnModeler() {
   };
 
   // -----------------------------
-  // SAFE IMPORT (FIXED)
+  // SAFE IMPORT WRAPPER
   // -----------------------------
-  const safeImport = useCallback(async (xml) => {
+  const safeImport = async (xml) => {
     if (!modelerRef.current) return;
     if (importingRef.current) return;
 
@@ -51,12 +51,9 @@ export default function BpmnModeler() {
         console.warn("BPMN warnings:", result.warnings);
       }
 
-      // IMPORTANT: verify model actually loaded
-      const canvas = modelerRef.current.get("canvas");
-      const root = canvas?.getRootElement?.();
-
-      if (!root) {
-        throw new Error("BPMN canvas failed to render root element");
+      if (result?.errors?.length) {
+        console.error("BPMN errors:", result.errors);
+        setError("Invalid BPMN structure detected");
       }
     } catch (err) {
       console.error("Import failed:", err);
@@ -64,35 +61,32 @@ export default function BpmnModeler() {
     } finally {
       importingRef.current = false;
     }
-  }, []);
+  };
 
   // -----------------------------
   // INIT MODELER
   // -----------------------------
   useEffect(() => {
-    const init = async () => {
-      const modeler = new Modeler({
-        container: canvasRef.current,
-        propertiesPanel: {
-          parent: propertiesRef.current
-        },
-        additionalModules: [
-          propertiesPanelModule,
-          propertiesProviderModule
-        ],
-        moddleExtensions: {
-          camunda: camundaModdleDescriptor
-        },
-        keyboard: {
-          bindTo: window
-        }
-      });
+    const modeler = new Modeler({
+      container: canvasRef.current,
+      propertiesPanel: {
+        parent: propertiesRef.current
+      },
+      additionalModules: [
+        propertiesPanelModule,
+        propertiesProviderModule
+      ],
+      moddleExtensions: {
+        camunda: camundaModdleDescriptor
+      },
+      keyboard: {
+        bindTo: window
+      }
+    });
 
-      modelerRef.current = modeler;
+    modelerRef.current = modeler;
 
-      // ensure DOM ready
-      await new Promise((r) => setTimeout(r, 0));
-
+    const loadDiagram = async () => {
       try {
         const res = await fetch("/processes/Diagram.bpmn");
         const xml = await res.text();
@@ -104,12 +98,14 @@ export default function BpmnModeler() {
       }
     };
 
-    init();
+    loadDiagram();
 
     return () => {
-      modelerRef.current?.destroy();
+      if (modelerRef.current) {
+        modelerRef.current.destroy();
+      }
     };
-  }, [safeImport]);
+  }, []);
 
   // -----------------------------
   // SAVE XML
@@ -124,11 +120,10 @@ export default function BpmnModeler() {
   }, []);
 
   // -----------------------------
-  // AI MUTATION
+  // AI MUTATION FLOW
   // -----------------------------
   const executeAiMutation = useCallback(async () => {
     if (!userRequest.trim()) return;
-    if (importingRef.current) return;
 
     setIsLoading(true);
     setError(null);
@@ -162,7 +157,14 @@ export default function BpmnModeler() {
         throw new Error("Invalid BPMN XML returned from API");
       }
 
+      // 🔥 CLEAN LLM OUTPUT
       mutatedXml = cleanXML(mutatedXml);
+
+      // emergency repair (your safeguard)
+      mutatedXml = mutatedXml.replace(
+          /<bpmndi:BPMNShape([^>]*?)>((?:(?!<bpmndi:BPMNLabel>)[\s\S])*?)<\/bpmndi:BPMNLabel>/g,
+          "<bpmndi:BPMNShape$1>$2</bpmndi:BPMNShape>"
+      );
 
       await safeImport(mutatedXml);
 
@@ -173,7 +175,7 @@ export default function BpmnModeler() {
     } finally {
       setIsLoading(false);
     }
-  }, [userRequest, saveXML, safeImport]);
+  }, [userRequest, saveXML]);
 
   // -----------------------------
   // UI
@@ -206,7 +208,9 @@ export default function BpmnModeler() {
           </div>
 
           <div className="input-group">
-            <span className="input-label">Mutation Command Prompt</span>
+          <span className="input-label">
+            Mutation Command Prompt
+          </span>
 
             <textarea
                 className="prompt-textarea"
