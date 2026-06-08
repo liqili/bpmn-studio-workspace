@@ -1,10 +1,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// BpmnModeler.scss — pixel-matched to the live screenshot
+// BpmnModeler.scss — desktop three-column + mobile tabbed single-column
+// Breakpoint: 768px
 // ─────────────────────────────────────────────────────────────────────────────
 
 :root {
   --bpmn-border:           #cccccc;
-  --bpmn-palette-width:    46px;   // actual bpmn-js palette column width
+  --bpmn-palette-width:    46px;
   --bpmn-panel-bg:         #f8f8f8;
   --bpmn-panel-border:     #e0e0e0;
   --bpmn-panel-width:      280px;
@@ -20,9 +21,13 @@
   --sidebar-muted:         #64748b;
   --sidebar-surface:       #ffffff;
   --sidebar-surface-border:#cbd5e1;
+
+  --tabbar-height:         58px;
 }
 
-// ── Root layout: palette | canvas | properties | sidebar ─────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOT LAYOUT
+// ─────────────────────────────────────────────────────────────────────────────
 .workspace-container {
   display: flex;
   height: 100vh;
@@ -32,25 +37,24 @@
   font-family: -apple-system, "Segoe UI", Arial, sans-serif;
 }
 
-// ── Canvas area (takes all remaining space) ───────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CANVAS AREA
+// ─────────────────────────────────────────────────────────────────────────────
 .canvas-area {
   flex: 1;
-  min-width: 0;          // critical: lets flex item shrink below content size
+  min-width: 0;
   height: 100%;
   position: relative;
   background: #ffffff;
   border-right: 1px solid var(--bpmn-border);
 }
 
-// Badge: positioned INSIDE .canvas-area, clear of the palette column
-// The palette renders inside #js-canvas starting at x=0, so offset by its width
 .canvas-badge {
   position: absolute;
   top: 12px;
-  left: calc(var(--bpmn-palette-width) + 14px);  // clears the palette exactly
-  z-index: 100;
-  pointer-events: none;  // never captures clicks meant for canvas/palette
-
+  left: calc(var(--bpmn-palette-width) + 14px);
+  z-index: 500;
+  pointer-events: none;
   background: rgba(255, 255, 255, 0.95);
   color: #3a3a3a;
   border: 1px solid #c8c8c8;
@@ -63,37 +67,78 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-// The bpmn-js canvas div — full size, no extra margin/padding
 #js-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
 
-  // Palette chrome — keep consistent with panel background
   .djs-palette {
     background: #fafafa !important;
     border-right: 1px solid var(--bpmn-border) !important;
     box-shadow: none !important;
   }
 
-  // Selection stroke → bpmn-io blue
-  .djs-element.selected .djs-outline {
-    stroke: var(--bpmn-blue) !important;
-  }
+  .djs-element.selected .djs-outline { stroke: var(--bpmn-blue) !important; }
+  .djs-element:hover   .djs-outline  { stroke: var(--bpmn-blue) !important; stroke-opacity: 0.4 !important; }
+  .djs-lasso-overlay { fill: var(--bpmn-blue-muted) !important; stroke: var(--bpmn-blue) !important; }
+}
 
-  .djs-element:hover .djs-outline {
-    stroke: var(--bpmn-blue) !important;
-    stroke-opacity: 0.4 !important;
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT TOOLBAR (bottom-left of canvas)
+// ─────────────────────────────────────────────────────────────────────────────
+.canvas-toolbar {
+  position: absolute;
+  bottom: 32px;
+  left: calc(var(--bpmn-palette-width) + 14px);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-  .djs-lasso-overlay {
-    fill: var(--bpmn-blue-muted) !important;
-    stroke: var(--bpmn-blue) !important;
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 8px;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #c8c8c8;
+  border-radius: 3px;
+  color: #404040;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+
+  svg { width: 14px; height: 14px; flex-shrink: 0; color: #555; }
+
+  &.active {
+    opacity: 1;
+    cursor: pointer;
+    pointer-events: all;
+
+    &:hover {
+      background: #fff;
+      border-color: var(--bpmn-blue);
+      color: var(--bpmn-blue);
+      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.18);
+      svg { color: var(--bpmn-blue); }
+    }
+    &:active { transform: translateY(1px); box-shadow: none; }
   }
 }
 
-// ── Properties panel ──────────────────────────────────────────────────────────
-// bpmn-js-properties-panel v5 renders its own Preact tree inside this div.
-// We only control the container shell; the panel styles itself internally.
+// ─────────────────────────────────────────────────────────────────────────────
+// PROPERTIES PANEL
+// ─────────────────────────────────────────────────────────────────────────────
 .properties-panel-container {
   width: var(--bpmn-panel-width);
   min-width: var(--bpmn-panel-width);
@@ -105,20 +150,18 @@
   box-sizing: border-box;
   flex-shrink: 0;
 
-  // Thin scrollbar matching panel background
   scrollbar-width: thin;
   scrollbar-color: #d0d0d0 transparent;
   &::-webkit-scrollbar       { width: 5px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
 
-  // v5 properties panel internal overrides — only if needed to correct colour
-  .bio-properties-panel {
-    background: var(--bpmn-panel-bg) !important;
-  }
+  .bio-properties-panel { background: var(--bpmn-panel-bg) !important; }
 }
 
-// ── AI Sidebar ────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// AI SIDEBAR
+// ─────────────────────────────────────────────────────────────────────────────
 .ai-sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
@@ -127,17 +170,12 @@
   border-left: 1px solid var(--sidebar-border);
   box-sizing: border-box;
   flex-shrink: 0;
-
-  // Three-row layout: header | scrollable-middle | pinned-footer
   display: flex;
   flex-direction: column;
   padding: 20px;
-  gap: 0;
-
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.08);
 }
 
-// Row 1 — Header (fixed height, never shrinks)
 .sidebar-header {
   flex-shrink: 0;
 
@@ -154,8 +192,7 @@
     &::before {
       content: '';
       display: block;
-      width: 7px;
-      height: 7px;
+      width: 7px; height: 7px;
       border-radius: 50%;
       background: var(--sidebar-accent);
       box-shadow: 0 0 7px var(--sidebar-accent);
@@ -163,12 +200,7 @@
     }
   }
 
-  p {
-    margin: 0;
-    font-size: 12px;
-    color: var(--sidebar-muted);
-    line-height: 1.55;
-  }
+  p { margin: 0; font-size: 12px; color: var(--sidebar-muted); line-height: 1.55; }
 }
 
 .sidebar-divider {
@@ -178,10 +210,9 @@
   border-top: 1px solid var(--sidebar-border);
 }
 
-// Row 2 — Input group (grows to fill all middle space)
 .input-group {
-  flex: 1;           // ← takes all available vertical space between header and footer
-  min-height: 0;     // ← required for flex children to scroll/shrink correctly
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -196,10 +227,9 @@
   letter-spacing: 0.08em;
 }
 
-// Textarea fills all remaining space inside .input-group
 .prompt-textarea {
-  flex: 1;           // ← grows inside .input-group to consume all vertical space
-  min-height: 80px;  // minimum so it doesn't collapse
+  flex: 1;
+  min-height: 80px;
   width: 100%;
   box-sizing: border-box;
   padding: 11px 13px;
@@ -211,23 +241,14 @@
   font-family: inherit;
   line-height: 1.55;
   outline: none;
-  resize: none;      // no manual resize — it fills space automatically
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  resize: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 
   &::placeholder { color: #94a3b8; }
-
-  &:focus {
-    border-color: var(--sidebar-accent);
-    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.15);
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
+  &:focus { border-color: var(--sidebar-accent); box-shadow: 0 0 0 3px var(--bpmn-blue-muted); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
-// Error banner (optional row between textarea and footer)
 .error-banner {
   flex-shrink: 0;
   background: #fff0f0;
@@ -240,7 +261,6 @@
   margin-top: 10px;
 }
 
-// Row 3 — Action footer (pinned to bottom, never shrinks)
 .action-block {
   flex-shrink: 0;
   padding-top: 16px;
@@ -257,36 +277,16 @@
   color: #ffffff;
   text-align: center;
   letter-spacing: 0.01em;
-
   background: var(--bpmn-blue);
   border: 1px solid var(--bpmn-blue-hover);
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
 
-  &:hover:not(:disabled) {
-    background: var(--bpmn-blue-hover);
-    box-shadow: 0 3px 10px rgba(13, 110, 253, 0.4);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow: none;
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.4);
-  }
-
-  &:disabled {
-    background: var(--sidebar-surface);
-    border-color: var(--sidebar-surface-border);
-    color: #94a3b8;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
+  &:hover:not(:disabled) { background: var(--bpmn-blue-hover); box-shadow: 0 3px 10px rgba(13,110,253,0.4); }
+  &:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+  &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(13,110,253,0.4); }
+  &:disabled { background: var(--sidebar-surface); border-color: var(--sidebar-surface-border); color: #94a3b8; cursor: not-allowed; }
 }
 
 .connection-profile {
@@ -296,11 +296,153 @@
   text-align: center;
   letter-spacing: 0.02em;
 
-  &::before {
-    content: '● ';
-    color: #3fb950;
-    font-size: 8px;
-    vertical-align: middle;
-    margin-right: 2px;
+  &::before { content: '● '; color: #3fb950; font-size: 8px; vertical-align: middle; margin-right: 2px; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE TAB BAR — hidden on desktop
+// ─────────────────────────────────────────────────────────────────────────────
+.mobile-tabbar {
+  display: none; // desktop: hidden
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE BREAKPOINT — ≤ 768px
+// ─────────────────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+
+  // Root becomes a column; tab bar pins to bottom
+  .workspace-container {
+    flex-direction: column;
+    height: 100dvh; // dvh accounts for mobile browser chrome
   }
+
+  // All panels fill the full screen minus the tab bar
+  .canvas-area,
+  .properties-panel-container,
+  .ai-sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100dvh - var(--tabbar-height));
+    border: none;
+    box-shadow: none;
+    min-width: unset;
+    flex-shrink: unset;
+  }
+
+  // Active panel is visible; inactive panels hidden but still mounted
+  // (bpmn-js must stay mounted to keep diagram state)
+  .mobile-hidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .mobile-active {
+    visibility: visible;
+    pointer-events: all;
+  }
+
+  // Canvas badge: don't overlap palette on narrow screens
+  .canvas-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    left: calc(var(--bpmn-palette-width) + 10px);
+    top: 8px;
+  }
+
+  // Export toolbar: move above tab bar
+  .canvas-toolbar {
+    bottom: calc(var(--tabbar-height) + 12px);
+    left: calc(var(--bpmn-palette-width) + 10px);
+    flex-direction: row; // horizontal on mobile to save vertical space
+    gap: 8px;
+  }
+
+  // Toolbar buttons — icon-only on very small screens
+  .toolbar-btn span {
+    display: none;
+  }
+  .toolbar-btn {
+    padding: 8px;
+    border-radius: 6px;
+    svg { width: 16px; height: 16px; }
+  }
+
+  // Properties panel: full width
+  .properties-panel-container {
+    width: 100%;
+    overflow-y: auto;
+  }
+
+  // Sidebar: full width, safe area padding for notched phones
+  .ai-sidebar {
+    width: 100%;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+
+  // Textarea: fixed height on mobile (flex: 1 can be unreliable in absolute panels)
+  .prompt-textarea {
+    flex: none;
+    height: 160px;
+    min-height: 120px;
+  }
+
+  // ── Mobile tab bar ──────────────────────────────────────────────────────
+  .mobile-tabbar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--tabbar-height);
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom); // notch safe area
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    transition: color 0.15s;
+    padding: 8px 0;
+    -webkit-tap-highlight-color: transparent; // remove iOS tap flash
+
+    svg {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.15s;
+    }
+
+    &.tab-active {
+      color: var(--bpmn-blue);
+      svg { transform: scale(1.1); }
+    }
+
+    &:active svg { transform: scale(0.92); }
+  }
+}
+
+// Extra-small screens (phones in portrait < 375px)
+@media (max-width: 374px) {
+  .canvas-badge { display: none; } // too cramped on tiny screens
+  .tab-btn span { font-size: 9px; }
 }
