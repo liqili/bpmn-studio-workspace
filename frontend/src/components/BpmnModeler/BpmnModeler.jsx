@@ -76,7 +76,7 @@ export default function BpmnModeler() {
     try {
       const { warnings } = await modelerRef.current.importXML(xml);
       if (warnings?.length) console.warn("BPMN import warnings:", warnings);
-      modelerRef.current.get("canvas").zoom("fit-viewport");
+      modelerRef.current.get("canvas").zoom("fit-viewport", true);
     } catch (err) {
       console.error("Import failed:", err);
       setError("Failed to render BPMN diagram: " + err.message);
@@ -173,7 +173,7 @@ export default function BpmnModeler() {
   useEffect(() => {
     if (activeTab === TAB_CANVAS && modelerRef.current) {
       setTimeout(() => {
-        modelerRef.current.get("canvas").zoom("fit-viewport");
+        modelerRef.current.get("canvas").zoom("fit-viewport", true);
       }, 50);
     }
   }, [activeTab]);
@@ -182,7 +182,7 @@ export default function BpmnModeler() {
   // AI MUTATION FLOW
   // -----------------------------
   const executeAiMutation = useCallback(async () => {
-    if (!userRequest.trim()) return;
+    if (!userRequest.trim() || isLoading) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -223,7 +223,6 @@ export default function BpmnModeler() {
 
         {/* Canvas panel */}
         <div className={`canvas-area ${activeTab === TAB_CANVAS ? "mobile-active" : "mobile-hidden"}`}>
-          <div className="canvas-badge">BPMN 2.0 INTERACTIVE ENGINE</div>
           <div ref={canvasRef} id="js-canvas" />
           <div className="canvas-toolbar">
             <a ref={downloadXmlRef} className="toolbar-btn" href="#" title="Download BPMN XML">

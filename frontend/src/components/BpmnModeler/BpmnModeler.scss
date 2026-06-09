@@ -3,6 +3,24 @@
 // Breakpoint: 768px
 // ─────────────────────────────────────────────────────────────────────────────
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: auto; // show scrollbars only when content genuinely overflows
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden; // #root itself never scrolls — workspace-container handles layout
+}
+
 :root {
   --bpmn-border:           #cccccc;
   --bpmn-palette-width:    46px;
@@ -32,7 +50,7 @@
   display: flex;
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  overflow: hidden; // the app itself never page-scrolls
   background: #ffffff;
   font-family: -apple-system, "Segoe UI", Arial, sans-serif;
 }
@@ -91,7 +109,7 @@
 .canvas-toolbar {
   position: absolute;
   bottom: 12px;
-  left: calc(var(--bpmn-palette-width) + 14px);
+  left: 20px;
   z-index: 500;
   display: flex;
   flex-direction: column;
@@ -304,7 +322,7 @@
 // MOBILE TAB BAR — hidden on desktop
 // ─────────────────────────────────────────────────────────────────────────────
 .mobile-tabbar {
-  display: none; // desktop: hidden
+  display: none;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -312,13 +330,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
 
-  // Root becomes a column; tab bar pins to bottom
   .workspace-container {
     flex-direction: column;
-    height: 100dvh; // dvh accounts for mobile browser chrome
+    height: 100dvh;
   }
 
-  // All panels fill the full screen minus the tab bar
   .canvas-area,
   .properties-panel-container,
   .ai-sidebar {
@@ -333,8 +349,6 @@
     flex-shrink: unset;
   }
 
-  // Active panel is visible; inactive panels hidden but still mounted
-  // (bpmn-js must stay mounted to keep diagram state)
   .mobile-hidden {
     visibility: hidden;
     pointer-events: none;
@@ -345,7 +359,6 @@
     pointer-events: all;
   }
 
-  // Canvas badge: don't overlap palette on narrow screens
   .canvas-badge {
     font-size: 10px;
     padding: 3px 8px;
@@ -353,15 +366,13 @@
     top: 8px;
   }
 
-  // Export toolbar: move above tab bar
   .canvas-toolbar {
     bottom: 8px;
-    left: calc(var(--bpmn-palette-width) + 10px);
-    flex-direction: row; // horizontal on mobile to save vertical space
+    left: 20px;
+    flex-direction: row;
     gap: 8px;
   }
 
-  // Toolbar buttons — icon-only on very small screens
   .toolbar-btn span {
     display: none;
   }
@@ -371,13 +382,11 @@
     svg { width: 16px; height: 16px; }
   }
 
-  // Properties panel: full width
   .properties-panel-container {
     width: 100%;
     overflow-y: auto;
   }
 
-  // Sidebar: full width, safe area padding for notched phones
   .ai-sidebar {
     width: 100%;
     padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
@@ -385,14 +394,12 @@
     overflow-y: auto;
   }
 
-  // Textarea: fixed height on mobile (flex: 1 can be unreliable in absolute panels)
   .prompt-textarea {
     flex: none;
     height: 160px;
     min-height: 120px;
   }
 
-  // ── Mobile tab bar ──────────────────────────────────────────────────────
   .mobile-tabbar {
     display: flex;
     position: fixed;
@@ -403,7 +410,7 @@
     background: #ffffff;
     border-top: 1px solid #e2e8f0;
     z-index: 1000;
-    padding-bottom: env(safe-area-inset-bottom); // notch safe area
+    padding-bottom: env(safe-area-inset-bottom);
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   }
 
@@ -425,7 +432,7 @@
     text-transform: uppercase;
     transition: color 0.15s;
     padding: 8px 0;
-    -webkit-tap-highlight-color: transparent; // remove iOS tap flash
+    -webkit-tap-highlight-color: transparent;
 
     svg {
       width: 20px;
@@ -444,7 +451,7 @@
 
 // Extra-small screens (phones in portrait < 375px)
 @media (max-width: 374px) {
-  .canvas-badge { display: none; } // too cramped on tiny screens
+  .canvas-badge { display: none; }
   .tab-btn span { font-size: 9px; }
 }
 
